@@ -2,6 +2,8 @@
 
 Give Codex agents a real browser through Playwright MCP, with a persistent user profile that keeps site sessions across runs.
 
+The key architectural point: this repo avoids per-task Playwright spec files for normal browsing work. Browser actions happen through Playwright MCP tools inside the Codex session, not by generating temporary JSON task files on disk.
+
 This repository is the Codex equivalent of `claude-browser-agent`, but the installation model is different:
 
 - Claude needed a Claude skill plus `claude mcp add ...`
@@ -45,7 +47,15 @@ The installer writes three things into the user's home directory:
 2. A local marketplace entry at `~/.agents/plugins/marketplace.json`
 3. A plugin-local Playwright MCP config pointing at `@playwright/mcp`
 
+The installer also performs migration cleanup when it finds older local browser setups:
+
+- Removes the legacy `playwright-browser-agent` plugin if present
+- Removes any matching legacy marketplace entry
+- Renames a legacy global shell skill at `~/.codex/skills/playwright-browser` to `~/.codex/skills/playwright-browser-fallback` when possible
+
 The plugin bundles a skill named `codex-browser-agent`. In a fresh Codex session, agents can either use that skill explicitly or just ask for browser automation naturally.
+
+On systems where a legacy shell skill named `playwright-browser` also exists, prefer `codex-browser-agent`. The shell skill is only a fallback for sessions that did not start with MCP browser tools mounted.
 
 ## How It Works
 
@@ -67,6 +77,8 @@ If a Codex agent reads this repository, the intended lesson is:
 
 That is the setup pattern this repo demonstrates.
 
+The shell skill should only exist as a fallback path when a session started without MCP browser tools. It is not the primary browser path.
+
 ## Usage After Install
 
 In a fresh Codex session, either say:
@@ -80,6 +92,24 @@ or just ask naturally:
 ```text
 Open reddit.com and summarize the top posts
 ```
+
+Avoid explicitly invoking `$playwright-browser` in fresh sessions. That name can refer to a shell fallback path rather than the plugin-backed MCP browser path.
+
+## Why This Avoids Temp Files
+
+The old shell-driven pattern looks like:
+
+```text
+Codex -> shell script -> temp spec/output files -> Playwright
+```
+
+This repo intentionally uses:
+
+```text
+Codex -> Playwright MCP tools -> Browser
+```
+
+That means routine tasks like "open github.com" or "read this page" do not need temporary spec files. Files are only needed when a user explicitly wants saved artifacts such as screenshots, HTML captures, or exported data.
 
 ## Manual Setup
 

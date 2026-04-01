@@ -5,6 +5,8 @@ description: Browser automation for Codex through the Playwright MCP server bund
 
 # Codex Browser Agent
 
+This is the standard browser path for Codex. Prefer invoking this skill or asking for browser work naturally in a fresh session. Do not rely on `$playwright-browser`, which should be treated as a shell fallback only when MCP browser tools are unavailable.
+
 Use the Playwright MCP tools exposed by this plugin to control a real browser with a persistent profile.
 
 ## Verify Tools First
@@ -12,6 +14,8 @@ Use the Playwright MCP tools exposed by this plugin to control a real browser wi
 Before doing any browser task, confirm the Playwright MCP tools are available in the session. If they are missing, stop and tell the user the plugin was not loaded when this Codex session started.
 
 Do not fall back to explaining limitations if the task is clearly about future setup. This plugin exists specifically to make future Codex sessions start with the browser tools already mounted.
+
+When the MCP tools are present, do not create shell-driven Playwright temp specs or output files for routine browsing tasks. Navigate and inspect directly through the tool family.
 
 ## Default Workflow
 

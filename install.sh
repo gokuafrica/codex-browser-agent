@@ -3,10 +3,12 @@ set -euo pipefail
 
 BROWSER="${1:-auto}"
 PLUGIN_NAME="codex-browser-agent"
+LEGACY_PLUGIN_NAME="playwright-browser-agent"
 HOME_DIR="${HOME}"
 PROFILE_DIR="${HOME_DIR}/.playwright-mcp-profile"
 PLUGIN_DIR="${HOME_DIR}/plugins/${PLUGIN_NAME}"
 MARKETPLACE_PATH="${HOME_DIR}/.agents/plugins/marketplace.json"
+CODEX_SKILLS_DIR="${HOME_DIR}/.codex/skills"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_SOURCE_DIR="${SCRIPT_DIR}/plugin"
 
@@ -67,7 +69,7 @@ choose_browser() {
     fi
   fi
 
-  for candidate in chrome msedge firefox; do
+  for candidate in msedge chrome firefox; do
     if is_browser_available "${candidate}"; then
       printf '%s\n' "${candidate}"
       return 0
@@ -95,6 +97,10 @@ printf '  Using: %s\n' "${SELECTED_BROWSER}"
 
 printf '\n[3/4] Installing plugin bundle...\n'
 mkdir -p "${PROFILE_DIR}" "$(dirname "${PLUGIN_DIR}")"
+rm -rf "${HOME_DIR}/plugins/${LEGACY_PLUGIN_NAME}"
+if [[ -d "${CODEX_SKILLS_DIR}/playwright-browser" && ! -e "${CODEX_SKILLS_DIR}/playwright-browser-fallback" ]]; then
+  mv "${CODEX_SKILLS_DIR}/playwright-browser" "${CODEX_SKILLS_DIR}/playwright-browser-fallback"
+fi
 rm -rf "${PLUGIN_DIR}"
 cp -R "${PLUGIN_SOURCE_DIR}" "${PLUGIN_DIR}"
 
@@ -131,13 +137,14 @@ PY
 printf '  Plugin installed to: %s\n' "${PLUGIN_DIR}"
 
 printf '\n[4/4] Updating Codex marketplace...\n'
-python3 - <<'PY' "${MARKETPLACE_PATH}" "${PLUGIN_NAME}"
+python3 - <<'PY' "${MARKETPLACE_PATH}" "${PLUGIN_NAME}" "${LEGACY_PLUGIN_NAME}"
 import json
 import pathlib
 import sys
 
 marketplace_path = pathlib.Path(sys.argv[1])
 plugin_name = sys.argv[2]
+legacy_plugin_name = sys.argv[3]
 
 marketplace_path.parent.mkdir(parents=True, exist_ok=True)
 if marketplace_path.exists():
@@ -152,6 +159,7 @@ else:
     }
 
 plugins = data.setdefault("plugins", [])
+plugins[:] = [plugin for plugin in plugins if plugin.get("name") != legacy_plugin_name]
 existing = None
 for plugin in plugins:
     if plugin.get("name") == plugin_name:
@@ -186,6 +194,7 @@ printf '\n=== Installation Complete ===\n\n'
 printf 'Next steps:\n'
 printf '  1. Start a new Codex session\n'
 printf '  2. Try: Use $codex-browser-agent to open example.com\n'
-printf '  3. If a site needs login, complete it in the browser window once\n\n'
+printf '  3. If a site needs login, complete it in the browser window once\n'
+printf '  4. Avoid explicitly invoking $playwright-browser; that name is reserved for shell fallback behavior\n\n'
 printf 'Plugin path: %s\n' "${PLUGIN_DIR}"
 printf 'Profile path: %s\n' "${PROFILE_DIR}"

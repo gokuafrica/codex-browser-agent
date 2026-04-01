@@ -5,9 +5,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $PluginName = "codex-browser-agent"
+$LegacyPluginNames = @("playwright-browser-agent")
 $ProfileDir = Join-Path $env:USERPROFILE ".playwright-mcp-profile"
 $PluginDir = Join-Path $env:USERPROFILE "plugins\$PluginName"
 $MarketplacePath = Join-Path $env:USERPROFILE ".agents\plugins\marketplace.json"
+$CodexSkillsDir = Join-Path $env:USERPROFILE ".codex\skills"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PluginSourceDir = Join-Path $ScriptDir "plugin"
 
@@ -18,14 +20,14 @@ function Get-NodeMajorVersion {
 
 function Find-BrowserCandidates {
     @(
+        @{ Key = "msedge"; Label = "Microsoft Edge"; Paths = @(
+            "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
+            "${env:ProgramFiles}\Microsoft\Edge\Application\msedge.exe"
+        )},
         @{ Key = "chrome"; Label = "Google Chrome"; Paths = @(
             "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe",
             "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe",
             "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe"
-        )},
-        @{ Key = "msedge"; Label = "Microsoft Edge"; Paths = @(
-            "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
-            "${env:ProgramFiles}\Microsoft\Edge\Application\msedge.exe"
         )},
         @{ Key = "firefox"; Label = "Firefox"; Paths = @(
             "${env:ProgramFiles}\Mozilla Firefox\firefox.exe",
@@ -123,6 +125,8 @@ function Update-Marketplace([string]$Path, [string]$PluginName) {
         $marketplace | Add-Member -NotePropertyName plugins -NotePropertyValue @()
     }
 
+    $marketplace.plugins = @($marketplace.plugins | Where-Object { $LegacyPluginNames -notcontains $_.name })
+
     $existing = @($marketplace.plugins | Where-Object { $_.name -eq $PluginName })
     if ($existing.Count -eq 0) {
         $entry = [ordered]@{
@@ -155,6 +159,23 @@ function Update-Marketplace([string]$Path, [string]$PluginName) {
     Write-JsonFile -Path $Path -Object $marketplace
 }
 
+function Remove-LegacyPlugins {
+    foreach ($legacyName in $LegacyPluginNames) {
+        $legacyDir = Join-Path $env:USERPROFILE "plugins\$legacyName"
+        if (Test-Path $legacyDir) {
+            Remove-Item -LiteralPath $legacyDir -Recurse -Force
+        }
+    }
+}
+
+function Rename-LegacyFallbackSkill {
+    $legacySkillDir = Join-Path $CodexSkillsDir "playwright-browser"
+    $fallbackSkillDir = Join-Path $CodexSkillsDir "playwright-browser-fallback"
+    if ((Test-Path $legacySkillDir) -and (-not (Test-Path $fallbackSkillDir))) {
+        Move-Item -LiteralPath $legacySkillDir -Destination $fallbackSkillDir
+    }
+}
+
 Write-Host "`n=== Codex Browser Agent Installer ===" -ForegroundColor Cyan
 
 Write-Host "`n[1/4] Checking prerequisites..." -ForegroundColor Yellow
@@ -177,6 +198,8 @@ Write-Host "  Using: $($selectedBrowser.Label)" -ForegroundColor Green
 Write-Host "`n[3/4] Installing plugin bundle..." -ForegroundColor Yellow
 New-Item -ItemType Directory -Path $ProfileDir -Force | Out-Null
 New-Item -ItemType Directory -Path (Split-Path -Parent $PluginDir) -Force | Out-Null
+Remove-LegacyPlugins
+Rename-LegacyFallbackSkill
 if (Test-Path $PluginDir) {
     Remove-Item -LiteralPath $PluginDir -Recurse -Force
 }
@@ -212,6 +235,7 @@ Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "  1. Start a new Codex session"
 Write-Host '  2. Try: Use $codex-browser-agent to open example.com'
 Write-Host "  3. If a site needs login, complete it in the browser window once"
+Write-Host '  4. Avoid explicitly invoking $playwright-browser; that name is reserved for shell fallback behavior'
 Write-Host ""
 Write-Host "Plugin path: $PluginDir" -ForegroundColor DarkGray
 Write-Host "Profile path: $ProfileDir" -ForegroundColor DarkGray
