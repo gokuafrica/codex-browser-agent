@@ -1,0 +1,43 @@
+{
+  "name": "codex-browser-agent",
+  "version": "0.1.0",
+  "description": "Persistent browser automation for Codex using Playwright MCP and a reusable browser profile.",
+  "author": {
+    "name": "gokuafrica",
+    "email": "anweshmohapatra007@gmail.com",
+    "url": "https://github.com/gokuafrica"
+  },
+  "homepage": "https://github.com/gokuafrica/codex-browser-agent",
+  "repository": "https://github.com/gokuafrica/codex-browser-agent",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "playwright",
+    "browser",
+    "automation",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Codex Browser Agent",
+    "shortDescription": "Use a real browser from Codex with persistent Playwright sessions",
+    "longDescription": "Use Codex Browser Agent to browse websites, read feeds, extract structured data, fill forms, and automate web apps from Codex through a local Playwright MCP server with a persistent browser profile.",
+    "developerName": "gokuafrica",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/gokuafrica/codex-browser-agent",
+    "privacyPolicyURL": "https://openai.com/policies/privacy-policy/",
+    "termsOfServiceURL": "https://openai.com/policies/terms-of-use/",
+    "defaultPrompt": [
+      "Open a site and tell me what is on the page",
+      "Read my feed and extract the top posts",
+      "Fill a form, but stop before final submit"
+    ],
+    "brandColor": "#0F766E"
+  }
+}

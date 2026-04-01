@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp@latest",
+        "--browser",
+        "__BROWSER__",
+        "--user-data-dir",
+        "__PROFILE_DIR__"
+      ],
+      "note": "Template file. The installer rewrites this with the selected browser and profile path for the local machine."
+    }
+  }
+}
